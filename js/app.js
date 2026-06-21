@@ -15,13 +15,10 @@ const App = {
 
     window.addEventListener('hashchange', () => this.navigate());
     document.addEventListener('click', (e) => {
-      if (e.target.closest('.landing-nav-links a[href^="#"]:not([href="#login"])')) {
+      const menuBtn = e.target.closest('#landing-menu-btn');
+      if (menuBtn) {
         e.preventDefault();
-        const href = e.target.getAttribute('href');
-        if (href && href.startsWith('#')) {
-          const el = document.querySelector(href);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }
+        document.getElementById('landing-mobile-drawer')?.classList.toggle('open');
         return;
       }
       const navItem = e.target.closest('.nav-item');
