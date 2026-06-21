@@ -7,14 +7,13 @@ const App = {
     Auth.onChange((state) => {
       if (state && state.isAuthenticated) {
         this.currentRole = state.user.rol;
-        this.renderShell();
-        this.handleRoute();
+        this.fullRender();
       } else {
         this.renderLogin();
       }
     });
 
-    window.addEventListener('hashchange', () => this.handleRoute());
+    window.addEventListener('hashchange', () => this.navigate());
     document.addEventListener('click', (e) => {
       const navItem = e.target.closest('.nav-item');
       if (navItem) {
@@ -32,11 +31,15 @@ const App = {
     const state = Auth.getState();
     if (state && state.isAuthenticated) {
       this.currentRole = state.user.rol;
-      this.renderShell();
-      this.handleRoute();
+      this.fullRender();
     } else {
       this.renderLogin();
     }
+  },
+
+  fullRender() {
+    this.renderShell();
+    this.navigate();
   },
 
   renderLogin() {
@@ -110,8 +113,7 @@ const App = {
           Auth.setState(state);
           this.currentRole = newRole;
           Components.Toast('info', 'Rol cambiado', `Ahora eres: ${Utils.statusLabel(newRole)}`);
-          this.renderShell();
-          this.handleRoute();
+          this.fullRender();
         }
       };
     }
@@ -168,7 +170,7 @@ const App = {
     `).join('');
   },
 
-  handleRoute() {
+  navigate() {
     const hash = window.location.hash || '#dashboard';
     const main = document.getElementById('page-content');
     if (!main) return;
@@ -178,51 +180,47 @@ const App = {
       return;
     }
 
-    this.renderShell();
-
     const page = hash.split('?')[0];
-    const newMain = document.getElementById('page-content');
-    if (!newMain) return;
 
     this.destroyCharts();
 
     switch (page) {
       case '#dashboard':
-        DashboardPage.render(newMain);
+        DashboardPage.render(main);
         break;
       case '#pbx':
-        PbxPage.render(newMain);
+        PbxPage.render(main);
         break;
       case '#agents':
-        AgentsPage.render(newMain);
+        AgentsPage.render(main);
         break;
       case '#users':
-        UsersPage.render(newMain);
+        UsersPage.render(main);
         break;
       case '#empresas':
-        EmpresasPage.render(newMain);
+        EmpresasPage.render(main);
         break;
       case '#callcenter':
-        CCDashboardPage.render(newMain);
+        CCDashboardPage.render(main);
         break;
       case '#callcenter/queues':
-        CCQueuesPage.render(newMain);
+        CCQueuesPage.render(main);
         break;
       case '#callcenter/agents':
-        CCAgentsPage.render(newMain);
+        CCAgentsPage.render(main);
         break;
       case '#callcenter/cdr':
-        CCCdrPage.render(newMain);
+        CCCdrPage.render(main);
         break;
       default:
         if (page.startsWith('#pbx/')) {
           const pbxId = page.replace('#pbx/', '');
-          PbxPage.renderDetail(newMain, pbxId);
+          PbxPage.renderDetail(main, pbxId);
         } else if (page.startsWith('#agents/')) {
           const agentId = page.replace('#agents/', '');
-          AgentsPage.renderDetail(newMain, agentId);
+          AgentsPage.renderDetail(main, agentId);
         } else {
-          newMain.innerHTML = '<div class="empty-state"><i class="fas fa-map-signs"></i><h3>Página no encontrada</h3><p>La página solicitada no existe.</p></div>';
+          main.innerHTML = '<div class="empty-state"><i class="fas fa-map-signs"></i><h3>Página no encontrada</h3><p>La página solicitada no existe.</p></div>';
         }
     }
 
