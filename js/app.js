@@ -9,7 +9,7 @@ const App = {
         this.currentRole = state.user.rol;
         this.fullRender();
       } else {
-        this.renderLogin();
+        this.renderLanding();
       }
     });
 
@@ -33,13 +33,17 @@ const App = {
       this.currentRole = state.user.rol;
       this.fullRender();
     } else {
-      this.renderLogin();
+      this.renderLanding();
     }
   },
 
   fullRender() {
     this.renderShell();
     this.navigate();
+  },
+
+  renderLanding() {
+    document.getElementById('app').innerHTML = LandingPage.render();
   },
 
   renderLogin() {
@@ -171,14 +175,18 @@ const App = {
   },
 
   navigate() {
-    const hash = window.location.hash || '#dashboard';
+    const hash = window.location.hash || '#';
     const main = document.getElementById('page-content');
-    if (!main) return;
 
     if (!Auth.isAuthenticated()) {
-      this.renderLogin();
+      const page = hash.split('?')[0];
+      if (page === '#login') { this.renderLogin(); return; }
+      if (page === '' || page === '#') { this.renderLanding(); return; }
+      this.renderLanding();
       return;
     }
+
+    if (!main) { this.fullRender(); return; }
 
     const page = hash.split('?')[0];
 
