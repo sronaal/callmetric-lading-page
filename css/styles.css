@@ -1328,3 +1328,43 @@ a:hover { color: var(--accent-cyan-hover); }
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+/* === 404 PAGE === */
+.error-404-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  min-height: 60vh;
+}
+
+.error-404-code {
+  font-size: 6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #06b6d4, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.error-404-icon {
+  font-size: 2.5rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.error-404-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.error-404-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}

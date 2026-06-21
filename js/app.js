@@ -234,7 +234,7 @@ const App = {
           const agentId = page.replace('#agents/', '');
           AgentsPage.renderDetail(main, agentId);
         } else {
-          main.innerHTML = '<div class="empty-state"><i class="fas fa-map-signs"></i><h3>Página no encontrada</h3><p>La página solicitada no existe.</p></div>';
+          main.innerHTML = App.render404();
         }
     }
 
@@ -281,6 +281,19 @@ const App = {
     } else {
       sidebar?.classList.remove('cc-mode');
     }
+  },
+
+  render404() {
+    const isAuth = Auth.isAuthenticated();
+    return `
+      <div class="error-404-page">
+        <div class="error-404-code">404</div>
+        <div class="error-404-icon"><i class="fas fa-map-signs"></i></div>
+        <h2 class="error-404-title">Página no encontrada</h2>
+        <p class="error-404-text">La página solicitada no existe o ha sido movida.</p>
+        <a class="btn btn-primary" href="${isAuth ? '#dashboard' : '#'}"><i class="fas fa-home"></i> Volver al inicio</a>
+      </div>
+    `;
   },
 
   redirectToDefault() {
