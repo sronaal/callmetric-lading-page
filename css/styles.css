@@ -1007,8 +1007,8 @@ a:hover { color: var(--accent-cyan-hover); }
 .landing-wrapper {
   display: flex;
   flex-direction: column;
+  flex: 1;
   width: 100%;
-  min-height: 100vh;
   background: var(--bg-primary);
 }
 .landing-nav {
