@@ -22,6 +22,9 @@ const Auth = {
     const user = DATA.usuarios.find(u => u.email === email && u.rol === role);
     if (!user) return { success: false, error: 'Credenciales inválidas o rol incorrecto' };
 
+    const hash = (role === 'supervisor' || role === 'operador') ? '#callcenter' : '#dashboard';
+    window.location.hash = hash;
+
     const state = {
       token: 'mock-token-' + Date.now(),
       user: {

@@ -15,6 +15,15 @@ const App = {
 
     window.addEventListener('hashchange', () => this.navigate());
     document.addEventListener('click', (e) => {
+      if (e.target.closest('.landing-nav-links a[href^="#"]:not([href="#login"])')) {
+        e.preventDefault();
+        const href = e.target.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          const el = document.querySelector(href);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+        return;
+      }
       const navItem = e.target.closest('.nav-item');
       if (navItem) {
         const href = navItem.dataset.href;

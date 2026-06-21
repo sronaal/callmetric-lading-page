@@ -54,7 +54,6 @@ const LoginPage = {
       const result = Auth.login(email, password, role);
       if (result.success) {
         Components.Toast('success', 'Inicio de sesión exitoso', `Bienvenido, ${result.user.nombre}`);
-        App.redirectToDefault();
       } else {
         errorEl.textContent = result.error;
         errorEl.style.display = 'block';
