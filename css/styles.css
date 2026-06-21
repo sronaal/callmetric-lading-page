@@ -910,12 +910,14 @@ a:hover { color: var(--accent-cyan-hover); }
 
 /* Login Page */
 .login-page {
-  min-height: 100vh;
+  flex: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-primary);
   padding: 20px;
+  min-height: 100vh;
 }
 
 .login-card {
