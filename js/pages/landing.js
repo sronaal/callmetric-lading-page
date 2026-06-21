@@ -1,6 +1,7 @@
 const LandingPage = {
   render() {
     return `
+      <div class="landing-wrapper">
       <nav class="landing-nav">
         <div class="landing-nav-inner">
           <a href="#" class="landing-brand" onclick="event.preventDefault();window.location.hash='#'">
@@ -116,6 +117,7 @@ const LandingPage = {
           <p class="landing-footer-copy">&copy; 2026 CallMetric Pro. Todos los derechos reservados.</p>
         </div>
       </footer>
+      </div>
     `;
   }
 };
