@@ -3,20 +3,23 @@ const AgentsPage = {
   searchQuery: '',
 
   render(container) {
-    const filtered = Utils.filterData(DATA.agentesMonitoreo, { nombre: this.searchQuery });
-    const sorted = Utils.sortData(filtered, 'nombre', 'asc');
+    const filtered = Utils.filterData(DATA.agentesMonitoreo, { hostname: this.searchQuery });
+    const sorted = Utils.sortData(filtered, 'hostname', 'asc');
     const paged = Components.paginate(sorted, this.currentPage);
 
-    const rows = paged.items.map(a => ({
-      _id: a.id,
-      nombre: a.nombre,
-      tipo: a.tipo,
-      version: a.version,
-      empresa: getEmpresaName(a.empresaId),
-      status: Components.StatusBadge(a.status),
-      heartbeat: a.ultimoHeartbeat ? Utils.formatDate(a.ultimoHeartbeat, { relative: true }) : '—',
-      intervalo: a.intervaloHeartbeat ? `${a.intervaloHeartbeat}s` : '—',
-    }));
+    const rows = paged.items.map(a => {
+      const pbx = getById('pbxServers', a.pbx_id);
+      const empresaName = pbx ? getEmpresaName(pbx.empresa_id) : '—';
+      return {
+        _id: a.id,
+        hostname: a.hostname || '—',
+        pbx: pbx ? pbx.nombre : '—',
+        empresa: empresaName,
+        version: a.version_agente || '—',
+        status: Components.StatusBadge(a.estado),
+        heartbeat: a.ultimo_heartbeat ? Utils.formatDate(a.ultimo_heartbeat, { relative: true }) : '—'
+      };
+    });
 
     const html = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
@@ -29,13 +32,12 @@ const AgentsPage = {
         <div class="card-body" style="padding:0">
           ${Components.DataTable({
             headers: [
-              { key: 'nombre', label: 'Nombre' },
-              { key: 'tipo', label: 'Tipo' },
-              { key: 'version', label: 'Versión' },
+              { key: 'hostname', label: 'Hostname' },
+              { key: 'pbx', label: 'PBX' },
               { key: 'empresa', label: 'Empresa' },
+              { key: 'version', label: 'Version' },
               { key: 'status', label: 'Estado' },
-              { key: 'heartbeat', label: 'Último Heartbeat' },
-              { key: 'intervalo', label: 'Intervalo' }
+              { key: 'heartbeat', label: 'Ultimo Heartbeat' }
             ],
             rows,
             onRowClick: (idx) => {
@@ -62,22 +64,12 @@ const AgentsPage = {
       this.render(document.getElementById('page-content'));
     });
 
-    document.querySelectorAll('.data-table tbody tr').forEach((tr, idx) => {
-      tr.onclick = () => {
-        const filtered = Utils.filterData(DATA.agentesMonitoreo, { nombre: this.searchQuery });
-        const sorted = Utils.sortData(filtered, 'nombre', 'asc');
-        const items = Components.paginate(sorted, this.currentPage).items;
-        const item = items[idx];
-        if (item) window.location.hash = `#agents/${item.id}`;
-      };
-    });
-
     document.querySelector('.page-prev')?.addEventListener('click', () => {
       if (this.currentPage > 1) { this.currentPage--; this.render(document.getElementById('page-content')); }
     });
 
     document.querySelector('.page-next')?.addEventListener('click', () => {
-      const filtered = Utils.filterData(DATA.agentesMonitoreo, { nombre: this.searchQuery });
+      const filtered = Utils.filterData(DATA.agentesMonitoreo, { hostname: this.searchQuery });
       const p = Components.paginate(filtered, this.currentPage);
       if (this.currentPage < p.pages) { this.currentPage++; this.render(document.getElementById('page-content')); }
     });
@@ -90,63 +82,42 @@ const AgentsPage = {
       return;
     }
 
-    const agentHeartbeats = DATA.heartbeats.filter(h => h.agentId === agentId).slice(0, 20);
-    const pbx = getById('pbxServers', agent.pbxId);
-    const metricsTags = agent.metricsCollected ? agent.metricsCollected.split(',').map(m => m.trim()).filter(Boolean) : [];
+    const agentHeartbeats = DATA.heartbeats.filter(h => h.agente_id === agentId).slice(0, 20);
+    const pbx = getById('pbxServers', agent.pbx_id);
 
     const hbRows = agentHeartbeats.map(hb => ({
-      timestamp: Utils.formatDate(hb.timestamp),
-      status: Components.StatusBadge(hb.status),
-      cpu: `${hb.cpuUsage}%`,
-      ram: `${hb.memoryUsage}%`,
-      ami: hb.conexionAmi ? '<span style="color:var(--success)"><i class="fas fa-circle"></i></span>' : '<span style="color:var(--danger)"><i class="fas fa-times"></i></span>',
-      latencia: `${hb.latenciaMs}ms`
+      timestamp: Utils.formatDate(hb.fecha),
+      status: Components.StatusBadge(hb.estado),
+      cpu: `${hb.cpu}%`,
+      ram: `${hb.memoria}%`,
+      disco: `${hb.disco}%`,
+      canales_sip: hb.canales_sip
     }));
 
     const html = `
       <div class="detail-header">
         <div style="display:flex;align-items:center;gap:12px">
-          <h2>${agent.nombre}</h2>
-          ${Components.StatusBadge(agent.status)}
+          <h2>${agent.hostname || 'Agente ' + agent.id}</h2>
+          ${Components.StatusBadge(agent.estado)}
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#agents'"><i class="fas fa-arrow-left"></i> Volver</button>
         </div>
       </div>
       <div style="margin-bottom:16px;color:var(--text-muted);font-size:0.85rem">
-        <span><i class="fas fa-cube"></i> ${agent.tipo} ${agent.version}</span>
+        <span><i class="fas fa-cube"></i> Agente v${agent.version_agente || '—'}</span>
         ${pbx ? `<span style="margin-left:16px"><i class="fas fa-server"></i> ${pbx.nombre}</span>` : ''}
       </div>
 
       ${Components.DetailGrid([
-        { label: 'Intervalo Heartbeat', value: `${agent.intervaloHeartbeat}s` },
-        { label: 'Último Heartbeat', value: agent.ultimoHeartbeat ? Utils.formatDate(agent.ultimoHeartbeat, { relative: true }) : '—' },
-        { label: 'Métricas', value: `${metricsTags.length} tipos` },
-        { label: 'Estado', value: agent.activo ? '<span style="color:var(--success)">Activo</span>' : '<span style="color:var(--text-muted)">Inactivo</span>' }
+        { label: 'Hostname', value: agent.hostname || '—' },
+        { label: 'Ultimo Heartbeat', value: agent.ultimo_heartbeat ? Utils.formatDate(agent.ultimo_heartbeat, { relative: true }) : '—' },
+        { label: 'Estado', value: agent.estado === 'Activo' ? '<span style="color:var(--success)">Activo</span>' : '<span style="color:var(--text-muted)">Inactivo</span>' },
+        { label: 'Creado', value: Utils.formatDate(agent.created_at) }
       ])}
 
-      <div class="grid-2" style="margin-bottom:20px">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Información del Agente</span></div>
-          <div class="card-body">
-            <table class="data-table">
-              <tr><td style="color:var(--text-muted);padding:6px 0">ID</td><td style="padding:6px 0;font-family:var(--font-mono)">${agent.id}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">PBX</td><td style="padding:6px 0">${pbx ? pbx.nombre : '—'}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">Creado</td><td style="padding:6px 0">${Utils.formatDate('2026-06-01T00:00:00Z')}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">Actualizado</td><td style="padding:6px 0">${Utils.formatDate(agent.ultimoHeartbeat || '2026-06-01T00:00:00Z')}</td></tr>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Métricas Recolectadas</span></div>
-          <div class="card-body">
-            ${metricsTags.length > 0 ? metricsTags.map(t => `<span class="tag">${t}</span>`).join('') : '<span style="color:var(--text-muted)">Sin métricas configuradas</span>'}
-          </div>
-        </div>
-      </div>
-
       <div class="card">
-        <div class="card-header"><span class="card-title">Últimos Heartbeats (${agentHeartbeats.length})</span></div>
+        <div class="card-header"><span class="card-title">Ultimos Heartbeats (${agentHeartbeats.length})</span></div>
         <div class="card-body" style="padding:0">
           ${Components.DataTable({
             headers: [
@@ -154,8 +125,8 @@ const AgentsPage = {
               { key: 'status', label: 'Estado' },
               { key: 'cpu', label: 'CPU' },
               { key: 'ram', label: 'RAM' },
-              { key: 'ami', label: 'AMI' },
-              { key: 'latencia', label: 'Latencia' }
+              { key: 'disco', label: 'Disco' },
+              { key: 'canales_sip', label: 'Canales SIP' }
             ],
             rows: hbRows,
             emptyMessage: 'Sin heartbeats registrados'

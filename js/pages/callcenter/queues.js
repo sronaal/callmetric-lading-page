@@ -1,13 +1,13 @@
 const CCQueuesPage = {
   render(container) {
     const user = Auth.getUser();
-    const empresas = user.rol === 'super_admin'
+    const empresas = user.rol === 'SUPER_ADMIN'
       ? DATA.empresas
-      : DATA.empresas.filter(e => e.id === user.empresaId);
+      : DATA.empresas.filter(e => e.id === user.empresa_id);
 
     const queueGroups = {};
     DATA.colasCallCenter.forEach(q => {
-      const empresa = DATA.empresas.find(e => e.id === q.empresaId);
+      const empresa = DATA.empresas.find(e => e.id === q.empresa_id);
       const key = empresa ? empresa.nombre : 'Sin empresa';
       if (!queueGroups[key]) queueGroups[key] = [];
       queueGroups[key].push(q);

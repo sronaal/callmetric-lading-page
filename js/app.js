@@ -59,13 +59,9 @@ const App = {
 
   renderShell() {
     const user = Auth.getUser();
-    const rol = user ? user.rol : 'super_admin';
-    const isSuperAdmin = rol === 'super_admin';
-    const isSupervisor = rol === 'supervisor';
-    const isAdmin = isSuperAdmin || rol === 'admin_tenant';
+    const rol = user ? user.rol : 'SUPER_ADMIN';
+    const isSuperAdmin = rol === 'SUPER_ADMIN';
     const isCC = /callcenter/.test(window.location.hash);
-
-    const accent = isCC ? 'violet' : 'cyan';
     const activeClass = isCC ? 'cc-active' : 'active';
     const hash = window.location.hash || '#dashboard';
 
@@ -73,7 +69,6 @@ const App = {
 
     const userName = user ? user.nombre : 'Usuario';
     const userInitials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    const empresa = user ? getEmpresaName(user.empresaId) : '';
 
     const html = `
       <aside class="sidebar">
@@ -92,12 +87,12 @@ const App = {
           <div class="header-right">
             <div class="header-badge connected"><i class="fas fa-circle"></i><span>Conectado</span></div>
             <select class="role-selector" id="role-quick-switch">
-              <option value="super_admin" ${rol === 'super_admin' ? 'selected' : ''}>Super Admin</option>
-              <option value="supervisor" ${rol === 'supervisor' ? 'selected' : ''}>Supervisor</option>
-              <option value="admin_tenant" ${rol === 'admin_tenant' ? 'selected' : ''}>Admin</option>
+              <option value="1" ${rol === 'SUPER_ADMIN' ? 'selected' : ''}>Super Admin</option>
+              <option value="3" ${rol === 'SUPERVISOR' ? 'selected' : ''}>Supervisor</option>
+              <option value="2" ${rol === 'ADMIN_EMPRESA' ? 'selected' : ''}>Admin</option>
             </select>
             <div class="user-avatar" title="${userName}">${userInitials}</div>
-            <button class="btn-logout" id="logout-btn" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
+            <button class="btn-logout" id="logout-btn" title="Cerrar sesion"><i class="fas fa-sign-out-alt"></i></button>
           </div>
         </header>
         <main class="page-content" id="page-content"></main>
@@ -115,14 +110,17 @@ const App = {
     const roleSwitch = document.getElementById('role-quick-switch');
     if (roleSwitch) {
       roleSwitch.onchange = () => {
-        const newRole = roleSwitch.value;
+        const newRoleId = parseInt(roleSwitch.value);
+        const rolNames = { 1: 'SUPER_ADMIN', 2: 'ADMIN_EMPRESA', 3: 'SUPERVISOR', 4: 'OPERADOR' };
+        const newRol = rolNames[newRoleId] || 'SUPER_ADMIN';
         const currentUser = Auth.getUser();
         if (currentUser) {
           const state = Auth.getState();
-          state.user.rol = newRole;
+          state.user.rol_id = newRoleId;
+          state.user.rol = newRol;
           Auth.setState(state);
-          this.currentRole = newRole;
-          Components.Toast('info', 'Rol cambiado', `Ahora eres: ${Utils.statusLabel(newRole)}`);
+          this.currentRole = newRol;
+          Components.Toast('info', 'Rol cambiado', 'Ahora eres: ' + newRol);
           this.fullRender();
         }
       };
@@ -145,28 +143,22 @@ const App = {
         { label: 'Servidores PBX', icon: 'server', href: '#pbx' },
         { label: 'Agentes', icon: 'robot', href: '#agents' }
       ]},
-      { title: 'Administración', items: [
+      { title: 'Administracion', items: [
         { label: 'Usuarios', icon: 'users', href: '#users' },
         { label: 'Empresas', icon: 'building', href: '#empresas' }
-      ]},
-      { title: 'Call Center', items: [
-        { label: 'Dashboard', icon: 'headset', href: '#callcenter' },
-        { label: 'Colas', icon: 'layer-group', href: '#callcenter/queues' },
-        { label: 'Agentes CC', icon: 'user-tie', href: '#callcenter/agents' },
-        { label: 'Reportes CDR', icon: 'file-alt', href: '#callcenter/cdr' }
       ]}
     ];
 
     const supervisorSections = [
-      { title: 'Call Center', items: [
-        { label: 'Dashboard', icon: 'headset', href: '#callcenter' },
-        { label: 'Colas', icon: 'layer-group', href: '#callcenter/queues' },
-        { label: 'Agentes CC', icon: 'user-tie', href: '#callcenter/agents' },
-        { label: 'Reportes CDR', icon: 'file-alt', href: '#callcenter/cdr' }
+      { title: 'General', items: [
+        { label: 'Dashboard', icon: 'chart-pie', href: '#dashboard' }
+      ]},
+      { title: 'Infraestructura', items: [
+        { label: 'Servidores PBX', icon: 'server', href: '#pbx' }
       ]}
     ];
 
-    const sections = (rol === 'super_admin' || rol === 'admin_tenant') ? superAdminSections : supervisorSections;
+    const sections = (rol === 'SUPER_ADMIN' || rol === 'ADMIN_EMPRESA') ? superAdminSections : supervisorSections;
 
     return sections.map(sec => `
       <div class="nav-section">
@@ -214,24 +206,12 @@ const App = {
       case '#empresas':
         EmpresasPage.render(main);
         break;
-      case '#callcenter':
-        CCDashboardPage.render(main);
-        break;
-      case '#callcenter/queues':
-        CCQueuesPage.render(main);
-        break;
-      case '#callcenter/agents':
-        CCAgentsPage.render(main);
-        break;
-      case '#callcenter/cdr':
-        CCCdrPage.render(main);
-        break;
       default:
         if (page.startsWith('#pbx/')) {
-          const pbxId = page.replace('#pbx/', '');
+          const pbxId = parseInt(page.replace('#pbx/', ''));
           PbxPage.renderDetail(main, pbxId);
         } else if (page.startsWith('#agents/')) {
-          const agentId = page.replace('#agents/', '');
+          const agentId = parseInt(page.replace('#agents/', ''));
           AgentsPage.renderDetail(main, agentId);
         } else {
           main.innerHTML = App.render404();
@@ -247,12 +227,8 @@ const App = {
       '#dashboard': 'Dashboard',
       '#pbx': 'Servidores PBX',
       '#agents': 'Agentes de Monitoreo',
-      '#users': 'Gestión de Usuarios',
-      '#empresas': 'Empresas',
-      '#callcenter': 'Call Center — Dashboard',
-      '#callcenter/queues': 'Call Center — Colas',
-      '#callcenter/agents': 'Call Center — Agentes',
-      '#callcenter/cdr': 'Call Center — Reportes CDR'
+      '#users': 'Gestion de Usuarios',
+      '#empresas': 'Empresas'
     };
     const hash = window.location.hash || '#dashboard';
     const el = document.getElementById('page-title');
@@ -264,23 +240,12 @@ const App = {
     document.querySelectorAll('.nav-item').forEach(item => {
       const href = item.dataset.href;
       item.classList.remove('active', 'cc-active');
-      if (hash.startsWith('#callcenter')) {
-        if (href && hash.startsWith(href)) {
-          item.classList.add('cc-active');
-        }
-      } else if (href === '#dashboard') {
+      if (href === '#dashboard') {
         if (hash === '' || hash === '#' || hash === '#dashboard') item.classList.add('active');
       } else if (href && hash.startsWith(href)) {
         item.classList.add('active');
       }
     });
-
-    const sidebar = document.querySelector('.sidebar');
-    if (hash.startsWith('#callcenter')) {
-      sidebar?.classList.add('cc-mode');
-    } else {
-      sidebar?.classList.remove('cc-mode');
-    }
   },
 
   render404() {
@@ -289,20 +254,11 @@ const App = {
       <div class="error-404-page">
         <div class="error-404-code">404</div>
         <div class="error-404-icon"><i class="fas fa-map-signs"></i></div>
-        <h2 class="error-404-title">Página no encontrada</h2>
-        <p class="error-404-text">La página solicitada no existe o ha sido movida.</p>
+        <h2 class="error-404-title">Pagina no encontrada</h2>
+        <p class="error-404-text">La pagina solicitada no existe o ha sido movida.</p>
         <a class="btn btn-primary" href="${isAuth ? '#dashboard' : '#'}"><i class="fas fa-home"></i> Volver al inicio</a>
       </div>
     `;
-  },
-
-  redirectToDefault() {
-    const user = Auth.getUser();
-    if (user && (user.rol === 'supervisor' || user.rol === 'operador')) {
-      window.location.hash = '#callcenter';
-    } else {
-      window.location.hash = '#dashboard';
-    }
   },
 
   destroyCharts() {

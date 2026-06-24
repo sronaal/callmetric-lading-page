@@ -45,11 +45,11 @@ const CCCdrPage = {
 
   renderLlamadasTab() {
     const rows = DATA.cdrLlamadas.slice(0, 15).map(c => ({
-      caller: c.callerNumber,
-      agente: c.agentName,
-      cola: c.colaNombre,
+      caller: c.caller_number,
+      agente: c.agent_name || '—',
+      cola: c.cola_nombre,
       inicio: Utils.formatDate(c.inicio),
-      duracion: Utils.formatDuration(c.duracionSeg),
+      duracion: Utils.formatDuration(c.duracion_seg),
       disposicion: `<span class="status-badge ${c.disposicion}">${Utils.statusLabel(c.disposicion)}</span>`
     }));
 
@@ -68,14 +68,14 @@ const CCCdrPage = {
   },
 
   renderColasTab() {
-    const rows = DATA.colasCallCenter.filter(q => q.llamadasAtendidasHoy > 0).map(q => ({
+    const rows = DATA.colasCallCenter.filter(q => q.llamadas_atendidas_hoy > 0).map(q => ({
       nombre: q.nombre,
       extension: q.extension,
-      atendidas: q.llamadasAtendidasHoy,
-      abandonadas: q.llamadasAbandonadasHoy,
-      total: q.llamadasAtendidasHoy + q.llamadasAbandonadasHoy,
-      sla: `<div style="display:flex;align-items:center;gap:8px"><div class="queue-sla-bar" style="flex:1;margin:0"><div class="queue-sla-fill" style="width:${q.nivelServicioPct}%;background:${Utils.slaColor(q.nivelServicioPct)}"></div></div><span style="font-size:0.8rem">${q.nivelServicioPct}%</span></div>`,
-      espera: Utils.formatDuration(q.tiempoPromedioEsperaSeg)
+      atendidas: q.llamadas_atendidas_hoy,
+      abandonadas: q.llamadas_abandonadas_hoy,
+      total: q.llamadas_atendidas_hoy + q.llamadas_abandonadas_hoy,
+      sla: `<div style="display:flex;align-items:center;gap:8px"><div class="queue-sla-bar" style="flex:1;margin:0"><div class="queue-sla-fill" style="width:${q.nivel_servicio_pct}%;background:${Utils.slaColor(q.nivel_servicio_pct)}"></div></div><span style="font-size:0.8rem">${q.nivel_servicio_pct}%</span></div>`,
+      espera: Utils.formatDuration(q.tiempo_promedio_espera_seg)
     }));
 
     return Components.DataTable({
@@ -94,13 +94,13 @@ const CCCdrPage = {
   },
 
   renderAgentesTab() {
-    const rows = DATA.agentesCC.filter(a => a.llamadasAtendidasHoy > 0).sort((a, b) => b.llamadasAtendidasHoy - a.llamadasAtendidasHoy).map(a => ({
+    const rows = DATA.agentesCC.filter(a => a.llamadas_atendidas_hoy > 0).sort((a, b) => b.llamadas_atendidas_hoy - a.llamadas_atendidas_hoy).map(a => ({
       nombre: a.nombre,
-      cola: a.colaNombre,
-      atendidas: a.llamadasAtendidasHoy,
-      aht: Utils.formatDuration(a.tiempoPromedioManejoSeg),
-      logueado: Utils.formatDuration(a.tiempoLogueadoSeg),
-      efectividad: `${a.tiempoPromedioManejoSeg > 0 ? Math.round(3600 / a.tiempoPromedioManejoSeg * a.llamadasAtendidasHoy) : 0} llam/h`
+      cola: a.cola_nombre,
+      atendidas: a.llamadas_atendidas_hoy,
+      aht: Utils.formatDuration(a.tiempo_promedio_manejo_seg),
+      logueado: Utils.formatDuration(a.tiempo_logueado_seg),
+      efectividad: `${a.tiempo_promedio_manejo_seg > 0 ? Math.round(3600 / a.tiempo_promedio_manejo_seg * a.llamadas_atendidas_hoy) : 0} llam/h`
     }));
 
     return Components.DataTable({
@@ -120,13 +120,13 @@ const CCCdrPage = {
   renderGlobalTab() {
     const rows = DATA.reportesDiarios.slice(-14).map(r => ({
       fecha: Utils.formatDate(r.fecha),
-      recibidas: r.llamadasRecibidas,
-      atendidas: r.llamadasAtendidas,
-      abandonadas: r.llamadasAbandonadas,
-      sla: `<span style="color:${Utils.slaColor(r.nivelServicioPct)};font-weight:600">${r.nivelServicioPct}%</span>`,
-      espera: Utils.formatDuration(r.tiempoPromedioEsperaSeg),
-      manejo: Utils.formatDuration(r.tiempoPromedioManejoSeg),
-      agentes: r.agentesActivos
+      recibidas: r.llamadas_recibidas,
+      atendidas: r.llamadas_atendidas,
+      abandonadas: r.llamadas_abandonadas,
+      sla: `<span style="color:${Utils.slaColor(r.nivel_servicio_pct)};font-weight:600">${r.nivel_servicio_pct}%</span>`,
+      espera: Utils.formatDuration(r.tiempo_promedio_espera_seg),
+      manejo: Utils.formatDuration(r.tiempo_promedio_manejo_seg),
+      agentes: r.agentes_activos
     }));
 
     return `

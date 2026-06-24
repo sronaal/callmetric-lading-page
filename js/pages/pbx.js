@@ -10,14 +10,11 @@ const PbxPage = {
     const rows = paged.items.map(pbx => ({
       _id: pbx.id,
       nombre: pbx.nombre,
-      tipo: pbx.tipo,
-      version: pbx.version,
-      empresa: getEmpresaName(pbx.empresaId),
-      status: Components.StatusBadge(pbx.status),
-      calls: pbx.activeCalls,
-      cpu: `${pbx.cpuUsage}%`,
-      ram: `${pbx.memoryUsage}%`,
-      heartbeat: Utils.formatDate(pbx.ultimoHeartbeat, { relative: true }),
+      ip: pbx.ip,
+      version: pbx.version_asterisk || '—',
+      empresa: getEmpresaName(pbx.empresa_id),
+      status: Components.StatusBadge(pbx.estado),
+      puerto: pbx.puerto_ami,
       acciones: `
         <button class="btn btn-ghost btn-sm view-pbx" data-id="${pbx.id}"><i class="fas fa-eye"></i></button>
         <button class="btn btn-ghost btn-sm edit-pbx" data-id="${pbx.id}"><i class="fas fa-edit"></i></button>
@@ -38,14 +35,11 @@ const PbxPage = {
           ${Components.DataTable({
             headers: [
               { key: 'nombre', label: 'Nombre' },
-              { key: 'tipo', label: 'Tipo' },
-              { key: 'version', label: 'Versión' },
+              { key: 'ip', label: 'IP' },
+              { key: 'puerto', label: 'Puerto AMI' },
+              { key: 'version', label: 'Asterisk' },
               { key: 'empresa', label: 'Empresa' },
               { key: 'status', label: 'Estado' },
-              { key: 'calls', label: 'Llamadas' },
-              { key: 'cpu', label: 'CPU' },
-              { key: 'ram', label: 'RAM' },
-              { key: 'heartbeat', label: 'Heartbeat' },
               { key: 'acciones', label: 'Acciones' }
             ],
             rows,
@@ -98,24 +92,27 @@ const PbxPage = {
   showAddModal() {
     const body = `
       <form id="pbx-form">
-        <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">Nombre <span style="color:var(--danger)">*</span></label><input class="form-input" id="f-nombre" placeholder="PBX Principal" value=""></div>
-          <div class="form-group"><label class="form-label">Hostname</label><input class="form-input" id="f-hostname" placeholder="pbx01.local"></div>
+        <div class="form-group">
+          <label class="form-label">Nombre <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="f-nombre" placeholder="PBX Principal">
+          <div class="form-error"></div>
         </div>
         <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">IP</label><input class="form-input" id="f-ip" placeholder="192.168.1.10"></div>
-          <div class="form-group"><label class="form-label">Tipo <span style="color:var(--danger)">*</span></label>
-            <select class="form-select" id="f-tipo"><option value="Asterisk">Asterisk</option><option value="FreePBX">FreePBX</option><option value="Issabel">Issabel</option></select>
+          <div class="form-group">
+            <label class="form-label">IP <span style="color:var(--danger)">*</span></label>
+            <input class="form-input" id="f-ip" placeholder="192.168.1.10">
+            <div class="form-error"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puerto AMI</label>
+            <input class="form-input" type="number" id="f-puerto" value="5038">
+            <div class="form-error"></div>
           </div>
         </div>
-        <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">Versión</label><input class="form-input" id="f-version" placeholder="20.5.1"></div>
-          <div class="form-group"><label class="form-label">Ubicación</label><input class="form-input" id="f-ubicacion" placeholder="Datacenter Principal"></div>
-        </div>
-        <div class="grid-3" style="gap:12px">
-          <div class="form-group"><label class="form-label">SIP Trunks</label><input class="form-input" type="number" id="f-trunks" value="4"></div>
-          <div class="form-group"><label class="form-label">Extensiones</label><input class="form-input" type="number" id="f-ext" value="50"></div>
-          <div class="form-group"><label class="form-label">Max Llamadas</label><input class="form-input" type="number" id="f-maxcalls" value="100"></div>
+        <div class="form-group">
+          <label class="form-label">Version Asterisk</label>
+          <input class="form-input" id="f-version" placeholder="20.5.1">
+          <div class="form-error"></div>
         </div>
       </form>
     `;
@@ -123,58 +120,33 @@ const PbxPage = {
     Components.Modal('Registrar Servidor PBX', body, {
       confirmText: 'Registrar',
       onConfirm: () => {
-        const nombre = document.getElementById('f-nombre').value.trim();
-        if (!nombre) { Components.Toast('warning', 'Validación', 'El nombre es obligatorio'); return; }
-
+        const form = document.getElementById('pbx-form');
+        Validation.clearErrors(form);
+        const result = Validation.validateForm({
+          'f-nombre': [['required', 'Nombre'], ['minLength', 2, 'Nombre'], ['maxLength', 100, 'Nombre']],
+          'f-ip': [['required', 'IP'], ['ip']],
+          'f-puerto': [['positiveNumber', 'Puerto AMI']]
+        });
+        if (!result.isValid) {
+          Validation.showErrors(result.errors);
+          return;
+        }
         const newPbx = {
-          id: 'pbx-' + String(DATA.pbxServers.length + 1).padStart(3, '0'),
-          empresaId: Auth.getUser().empresaId,
-          nombre,
-          hostname: document.getElementById('f-hostname').value || '',
-          ip: document.getElementById('f-ip').value || '',
-          tipo: document.getElementById('f-tipo').value,
-          version: document.getElementById('f-version').value || '',
-          status: 'pending',
-          activeCalls: 0,
-          cpuUsage: 0,
-          memoryUsage: 0,
-          memoryTotal: '4 GB',
-          diskUsage: 0,
-          diskTotal: '50 GB',
-          diskUsed: '0 GB',
-          uptime: '0d 0h 0m',
-          ultimoHeartbeat: null,
-          ubicacion: document.getElementById('f-ubicacion').value || '',
-          configuracion: {
-            sipTrunks: parseInt(document.getElementById('f-trunks').value) || 0,
-            extensiones: parseInt(document.getElementById('f-ext').value) || 0,
-            maxCalls: parseInt(document.getElementById('f-maxcalls').value) || 0
-          }
+          id: generateId('pbxServers'),
+          empresa_id: Auth.getUser().empresa_id,
+          nombre: result.values['f-nombre'],
+          ip: result.values['f-ip'],
+          puerto_ami: parseInt(result.values['f-puerto']) || 5038,
+          version_asterisk: result.values['f-version'],
+          estado: 'Activo',
+          created_at: new Date().toISOString()
         };
-
         DATA.pbxServers.push(newPbx);
-
-        const token = 'cm-' + Array.from({length: 32}, () => Math.random().toString(36)[2]).join('').toUpperCase();
-        Components.closeModal();
-
-        setTimeout(() => {
-          const tokenBody = `
-            <p style="margin-bottom:12px;color:var(--text-secondary);font-size:0.85rem">PBX registrado exitosamente. Guarda este token de registro para configurar el agente:</p>
-            <div class="token-display">
-              <code>${token}</code>
-              <button class="copy-btn" onclick="navigator.clipboard.writeText('${token}').then(()=>Components.Toast('success','Copiado','Token copiado al portapapeles'))"><i class="fas fa-copy"></i> Copiar</button>
-            </div>
-            <p style="font-size:0.8rem;color:var(--text-muted)">Configura el agente con este token usando <code>AGENT_TOKEN=${token}</code> en tu archivo .env</p>
-          `;
-          Components.Modal('Token de Registro', tokenBody, { showConfirm: false });
-        }, 300);
-
-        Components.Toast('success', 'PBX Registrado', `"${nombre}" ha sido registrado`);
-        this.searchQuery = '';
-        this.currentPage = 1;
+        Components.Toast('success', 'PBX Registrado', newPbx.nombre + ' ha sido registrado');
         this.render(document.getElementById('page-content'));
       }
     });
+    Validation.clearOnInput(document.getElementById('pbx-form'));
   },
 
   showEditModal(id) {
@@ -183,18 +155,34 @@ const PbxPage = {
 
     const body = `
       <form id="pbx-edit-form">
-        <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">Nombre <span style="color:var(--danger)">*</span></label><input class="form-input" id="f-nombre" value="${pbx.nombre}"></div>
-          <div class="form-group"><label class="form-label">Hostname</label><input class="form-input" id="f-hostname" value="${pbx.hostname || ''}"></div>
+        <div class="form-group">
+          <label class="form-label">Nombre <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="f-nombre" value="${pbx.nombre}">
+          <div class="form-error"></div>
         </div>
         <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">IP</label><input class="form-input" id="f-ip" value="${pbx.ip || ''}"></div>
-          <div class="form-group"><label class="form-label">Ubicación</label><input class="form-input" id="f-ubicacion" value="${pbx.ubicacion || ''}"></div>
+          <div class="form-group">
+            <label class="form-label">IP <span style="color:var(--danger)">*</span></label>
+            <input class="form-input" id="f-ip" value="${pbx.ip}">
+            <div class="form-error"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puerto AMI</label>
+            <input class="form-input" type="number" id="f-puerto" value="${pbx.puerto_ami || 5038}">
+            <div class="form-error"></div>
+          </div>
         </div>
-        <div class="grid-3" style="gap:12px">
-          <div class="form-group"><label class="form-label">SIP Trunks</label><input class="form-input" type="number" id="f-trunks" value="${pbx.configuracion?.sipTrunks || 0}"></div>
-          <div class="form-group"><label class="form-label">Extensiones</label><input class="form-input" type="number" id="f-ext" value="${pbx.configuracion?.extensiones || 0}"></div>
-          <div class="form-group"><label class="form-label">Max Llamadas</label><input class="form-input" type="number" id="f-maxcalls" value="${pbx.configuracion?.maxCalls || 0}"></div>
+        <div class="form-group">
+          <label class="form-label">Version Asterisk</label>
+          <input class="form-input" id="f-version" value="${pbx.version_asterisk || ''}">
+          <div class="form-error"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="f-estado">
+            <option value="Activo" ${pbx.estado === 'Activo' ? 'selected' : ''}>Activo</option>
+            <option value="Inactivo" ${pbx.estado === 'Inactivo' ? 'selected' : ''}>Inactivo</option>
+          </select>
         </div>
       </form>
     `;
@@ -202,21 +190,27 @@ const PbxPage = {
     Components.Modal('Editar Servidor PBX', body, {
       confirmText: 'Guardar Cambios',
       onConfirm: () => {
-        const nombre = document.getElementById('f-nombre').value.trim();
-        if (!nombre) { Components.Toast('warning', 'Validación', 'El nombre es obligatorio'); return; }
-
-        pbx.nombre = nombre;
-        pbx.hostname = document.getElementById('f-hostname').value;
-        pbx.ip = document.getElementById('f-ip').value;
-        pbx.ubicacion = document.getElementById('f-ubicacion').value;
-        pbx.configuracion.sipTrunks = parseInt(document.getElementById('f-trunks').value) || 0;
-        pbx.configuracion.extensiones = parseInt(document.getElementById('f-ext').value) || 0;
-        pbx.configuracion.maxCalls = parseInt(document.getElementById('f-maxcalls').value) || 0;
-
-        Components.Toast('success', 'PBX Actualizado', `"${nombre}" ha sido actualizado`);
+        const form = document.getElementById('pbx-edit-form');
+        Validation.clearErrors(form);
+        const result = Validation.validateForm({
+          'f-nombre': [['required', 'Nombre'], ['minLength', 2, 'Nombre'], ['maxLength', 100, 'Nombre']],
+          'f-ip': [['required', 'IP'], ['ip']],
+          'f-puerto': [['positiveNumber', 'Puerto AMI']]
+        });
+        if (!result.isValid) {
+          Validation.showErrors(result.errors);
+          return;
+        }
+        pbx.nombre = result.values['f-nombre'];
+        pbx.ip = result.values['f-ip'];
+        pbx.puerto_ami = parseInt(result.values['f-puerto']) || 5038;
+        pbx.version_asterisk = result.values['f-version'];
+        pbx.estado = document.getElementById('f-estado').value;
+        Components.Toast('success', 'PBX Actualizado', pbx.nombre + ' ha sido actualizado');
         this.render(document.getElementById('page-content'));
       }
     });
+    Validation.clearOnInput(document.getElementById('pbx-edit-form'));
   },
 
   showDeleteConfirm(id) {
@@ -224,12 +218,13 @@ const PbxPage = {
     if (!pbx) return;
 
     Components.Modal('Eliminar Servidor PBX',
-      `<p style="margin-bottom:8px">¿Estás seguro de eliminar <strong>${pbx.nombre}</strong>?</p><p style="font-size:0.8rem;color:var(--text-muted)">Esta acción no se puede deshacer. Los agentes asociados quedarán huérfanos.</p>`,
+      `<p style="margin-bottom:8px">Estas seguro de eliminar <strong>${pbx.nombre}</strong>?</p>
+      <p style="font-size:0.8rem;color:var(--text-muted)">Esta accion no se puede deshacer. Los agentes asociados quedaran huerfanos.</p>`,
       {
         confirmText: 'Eliminar',
         onConfirm: () => {
           DATA.pbxServers = DATA.pbxServers.filter(s => s.id !== id);
-          Components.Toast('success', 'PBX Eliminado', `"${pbx.nombre}" ha sido eliminado`);
+          Components.Toast('success', 'PBX Eliminado', pbx.nombre + ' ha sido eliminado');
           this.render(document.getElementById('page-content'));
         }
       }
@@ -250,7 +245,7 @@ const PbxPage = {
       <div class="detail-header">
         <div style="display:flex;align-items:center;gap:12px">
           <h2>${pbx.nombre}</h2>
-          ${Components.StatusBadge(pbx.status)}
+          ${Components.StatusBadge(pbx.estado)}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary btn-sm" onclick="window.location.hash='#pbx'"><i class="fas fa-arrow-left"></i> Volver</button>
@@ -259,40 +254,38 @@ const PbxPage = {
         </div>
       </div>
 
-      <div style="margin-bottom:8px;color:var(--text-muted);font-size:0.85rem">
-        ${pbx.ubicacion ? `<span><i class="fas fa-map-marker-alt"></i> ${pbx.ubicacion}</span>` : ''}
-        <span style="margin-left:16px"><i class="fas fa-cube"></i> ${pbx.tipo} ${pbx.version}</span>
-      </div>
-
       ${Components.DetailGrid([
-        { label: 'Llamadas Activas', value: pbx.activeCalls },
-        { label: 'CPU', value: `${pbx.cpuUsage}%` },
-        { label: 'RAM', value: `${pbx.memoryUsage}% de ${pbx.memoryTotal}` },
-        { label: 'Uptime', value: pbx.uptime },
-        { label: 'Disco', value: `${pbx.diskUsage}% (${pbx.diskUsed} / ${pbx.diskTotal})` },
-        { label: 'Heartbeat', value: Utils.formatDate(pbx.ultimoHeartbeat, { relative: true }) }
+        { label: 'IP', value: pbx.ip },
+        { label: 'Puerto AMI', value: pbx.puerto_ami },
+        { label: 'Version Asterisk', value: pbx.version_asterisk || '—' },
+        { label: 'Estado', value: pbx.estado === 'Activo' ? '<span style="color:var(--success)">Activo</span>' : '<span style="color:var(--text-muted)">Inactivo</span>' },
+        { label: 'Empresa', value: getEmpresaName(pbx.empresa_id) },
+        { label: 'Creado', value: Utils.formatDate(pbx.created_at) }
       ])}
 
       <div class="grid-2" style="margin-bottom:20px">
         <div class="card">
-          <div class="card-header"><span class="card-title">Configuración</span></div>
+          <div class="card-header"><span class="card-title">Agente de Monitoreo</span></div>
           <div class="card-body">
-            <div class="grid-3" style="gap:12px;text-align:center">
-              <div><div style="color:var(--text-muted);font-size:0.75rem">SIP Trunks</div><div style="font-size:1.2rem;font-weight:600">${pbx.configuracion?.sipTrunks || 0}</div></div>
-              <div><div style="color:var(--text-muted);font-size:0.75rem">Extensiones</div><div style="font-size:1.2rem;font-weight:600">${pbx.configuracion?.extensiones || 0}</div></div>
-              <div><div style="color:var(--text-muted);font-size:0.75rem">Max Llamadas</div><div style="font-size:1.2rem;font-weight:600">${pbx.configuracion?.maxCalls || 0}</div></div>
-            </div>
+            ${agent ? `
+              <table class="data-table">
+                <tr><td style="color:var(--text-muted);padding:6px 0">Hostname</td><td style="padding:6px 0;font-family:var(--font-mono)">${agent.hostname || '—'}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0">Version</td><td style="padding:6px 0">${agent.version_agente || '—'}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0">Estado</td><td style="padding:6px 0">${Components.StatusBadge(agent.estado)}</td></tr>
+                <tr><td style="color:var(--text-muted);padding:6px 0">Ultimo Heartbeat</td><td style="padding:6px 0">${agent.ultimo_heartbeat ? Utils.formatDate(agent.ultimo_heartbeat, { relative: true }) : '—'}</td></tr>
+              </table>
+            ` : '<span style="color:var(--text-muted)">Sin agente asignado</span>'}
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Información del Servidor</span></div>
+          <div class="card-header"><span class="card-title">Informacion del Servidor</span></div>
           <div class="card-body">
             <table class="data-table">
               <tr><td style="color:var(--text-muted);padding:6px 0">ID</td><td style="padding:6px 0">${pbx.id}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">Hostname</td><td style="padding:6px 0;font-family:var(--font-mono)">${pbx.hostname || '—'}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">IP</td><td style="padding:6px 0;font-family:var(--font-mono)">${pbx.ip || '—'}</td></tr>
-              <tr><td style="color:var(--text-muted);padding:6px 0">Empresa</td><td style="padding:6px 0">${getEmpresaName(pbx.empresaId)}</td></tr>
-              ${agent ? `<tr><td style="color:var(--text-muted);padding:6px 0">Agente Asignado</td><td style="padding:6px 0"><a href="#" onclick="window.location.hash='#agents/${agent.id}';return false">${agent.nombre}</a></td></tr>` : ''}
+              <tr><td style="color:var(--text-muted);padding:6px 0">IP</td><td style="padding:6px 0;font-family:var(--font-mono)">${pbx.ip}</td></tr>
+              <tr><td style="color:var(--text-muted);padding:6px 0">Puerto AMI</td><td style="padding:6px 0;font-family:var(--font-mono)">${pbx.puerto_ami}</td></tr>
+              <tr><td style="color:var(--text-muted);padding:6px 0">Empresa</td><td style="padding:6px 0">${getEmpresaName(pbx.empresa_id)}</td></tr>
+              <tr><td style="color:var(--text-muted);padding:6px 0">Creado</td><td style="padding:6px 0">${Utils.formatDate(pbx.created_at)}</td></tr>
             </table>
           </div>
         </div>

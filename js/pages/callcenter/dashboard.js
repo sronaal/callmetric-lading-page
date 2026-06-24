@@ -4,17 +4,17 @@ const CCDashboardPage = {
 
   render(container) {
     const queues = this.pbxFilter
-      ? DATA.colasCallCenter.filter(q => q.pbxId === this.pbxFilter)
+      ? DATA.colasCallCenter.filter(q => String(q.pbx_id) === String(this.pbxFilter))
       : DATA.colasCallCenter;
-    const activeQueues = queues.filter(q => q.status === 'active' || q.status === 'overflow');
+    const activeQueues = queues.filter(q => q.estado === 'Activa' || q.estado === 'overflow');
     const ccAgents = this.pbxFilter
-      ? DATA.agentesCC.filter(a => a.pbxId === this.pbxFilter)
+      ? DATA.agentesCC.filter(a => String(a.pbx_id) === String(this.pbxFilter))
       : DATA.agentesCC;
 
-    const enCola = DATA.llamadasEnCola.filter(qc => queues.some(q => q.id === qc.colaId));
-    const activeCalls = DATA.llamadasActivasCC.filter(ac => queues.some(q => q.id === ac.colaId));
-    const disponibles = ccAgents.filter(a => a.status === 'available').length;
-    const avgSla = queues.length > 0 ? Math.round(queues.reduce((s, q) => s + q.nivelServicioPct, 0) / queues.length) : 0;
+    const enCola = DATA.llamadasEnCola.filter(qc => queues.some(q => q.id === qc.cola_id));
+    const activeCalls = DATA.llamadasActivasCC.filter(ac => queues.some(q => q.id === ac.cola_id));
+    const disponibles = ccAgents.filter(a => a.estado === 'available').length;
+    const avgSla = queues.length > 0 ? Math.round(queues.reduce((s, q) => s + q.nivel_servicio_pct, 0) / queues.length) : 0;
 
     const html = `
       <div class="grid-4" style="margin-bottom:24px">
@@ -27,8 +27,8 @@ const CCDashboardPage = {
       <div style="margin-bottom:16px">
         <select class="form-select" id="cc-pbx-filter" style="min-width:200px">
           <option value="">Todas las PBX</option>
-          ${DATA.pbxServers.filter(p => p.status !== 'offline').map(p =>
-            `<option value="${p.id}" ${this.pbxFilter === p.id ? 'selected' : ''}>${p.nombre}</option>`
+          ${DATA.pbxServers.filter(p => p.estado !== 'Inactivo').map(p =>
+            `<option value="${p.id}" ${String(this.pbxFilter) === String(p.id) ? 'selected' : ''}>${p.nombre}</option>`
           ).join('')}
         </select>
       </div>
@@ -74,10 +74,10 @@ const CCDashboardPage = {
 
     const rows = calls.map(c => ({
       dir: c.direccion === 'inbound' ? '<i class="fas fa-arrow-down" style="color:var(--success)"></i>' : '<i class="fas fa-arrow-up" style="color:var(--info)"></i>',
-      caller: c.callerNumber,
-      agent: `${c.agentName} <span style="color:var(--text-muted)">${c.agentExtension}</span>`,
-      cola: c.colaNombre,
-      duracion: `<span style="color:${c.duracionSeg > 300 ? 'var(--danger)' : c.duracionSeg > 180 ? 'var(--warning)' : 'var(--text-primary)'}">${Utils.formatDuration(c.duracionSeg)}</span>`
+      caller: c.caller_number,
+      agent: `${c.agent_name} <span style="color:var(--text-muted)">${c.agent_extension}</span>`,
+      cola: c.cola_nombre,
+      duracion: `<span style="color:${c.duracion_seg > 300 ? 'var(--danger)' : c.duracion_seg > 180 ? 'var(--warning)' : 'var(--text-primary)'}">${Utils.formatDuration(c.duracion_seg)}</span>`
     }));
 
     return Components.DataTable({ headers, rows });
@@ -91,7 +91,7 @@ const CCDashboardPage = {
       const pa = pri[a.prioridad] || 3;
       const pb = pri[b.prioridad] || 3;
       if (pa !== pb) return pa - pb;
-      return b.tiempoEsperaSeg - a.tiempoEsperaSeg;
+      return b.tiempo_espera_seg - a.tiempo_espera_seg;
     });
 
     const headers = [
@@ -104,9 +104,9 @@ const CCDashboardPage = {
 
     const rows = sorted.map(c => ({
       prioridad: Components.PriorityBadge(c.prioridad),
-      caller: c.callerNumber,
-      cola: c.colaNombre,
-      espera: `<span style="color:${c.tiempoEsperaSeg > 120 ? 'var(--danger)' : c.tiempoEsperaSeg > 60 ? 'var(--warning)' : 'var(--text-primary)'}">${Utils.formatDuration(c.tiempoEsperaSeg)}</span>`,
+      caller: c.caller_number,
+      cola: c.cola_nombre,
+      espera: `<span style="color:${c.tiempo_espera_seg > 120 ? 'var(--danger)' : c.tiempo_espera_seg > 60 ? 'var(--warning)' : 'var(--text-primary)'}">${Utils.formatDuration(c.tiempo_espera_seg)}</span>`,
       pos: `#${c.posicion}`
     }));
 

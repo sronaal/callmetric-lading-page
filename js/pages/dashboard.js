@@ -1,16 +1,15 @@
 const DashboardPage = {
   render(container) {
-    const pbxHealthy = DATA.pbxServers.filter(p => p.status === 'healthy').length;
-    const callsActive = DATA.llamadas.filter(l => l.status === 'active').length;
-    const alertsActive = DATA.alertas.filter(a => a.status === 'active').length;
-    const agentsActive = DATA.agentesMonitoreo.filter(a => a.activo).length;
+    const pbxActive = DATA.pbxServers.filter(p => p.estado === 'Activo').length;
+    const alertsActive = DATA.alertas.filter(a => a.estado === 'Activa').length;
+    const agentsActive = DATA.agentesMonitoreo.filter(a => a.estado === 'Activo').length;
 
     const html = `
       <div class="grid-4" style="margin-bottom:24px">
-        ${Components.MetricCard({ label: 'Servidores PBX', value: DATA.pbxServers.length, icon: 'server', trend: 'up', trendValue: `${pbxHealthy} saludables`, iconColor: 'cyan' })}
-        ${Components.MetricCard({ label: 'Llamadas Activas', value: callsActive, icon: 'phone', trend: 'up', trendValue: '+3 hoy', iconColor: 'green' })}
-        ${Components.MetricCard({ label: 'Alertas Activas', value: alertsActive, icon: 'bell', trend: alertsActive > 2 ? 'up' : 'down', trendValue: alertsActive > 2 ? 'requiere atención' : 'sin novedad', iconColor: alertsActive > 2 ? 'orange' : 'green' })}
-        ${Components.MetricCard({ label: 'Agentes', value: DATA.agentesMonitoreo.length, icon: 'robot', trend: 'up', trendValue: `${agentsActive} activos`, iconColor: 'blue' })}
+        ${Components.MetricCard({ label: 'Servidores PBX', value: DATA.pbxServers.length, icon: 'server', trend: 'up', trendValue: pbxActive + ' activos', iconColor: 'cyan' })}
+        ${Components.MetricCard({ label: 'Llamadas Hoy', value: DATA.llamadas.length, icon: 'phone', trend: 'up', trendValue: 'hoy', iconColor: 'green' })}
+        ${Components.MetricCard({ label: 'Alertas Activas', value: alertsActive, icon: 'bell', trend: alertsActive > 2 ? 'up' : 'down', trendValue: alertsActive > 2 ? 'requiere atencion' : 'sin novedad', iconColor: alertsActive > 2 ? 'orange' : 'green' })}
+        ${Components.MetricCard({ label: 'Agentes', value: DATA.agentesMonitoreo.length, icon: 'robot', trend: 'up', trendValue: agentsActive + ' activos', iconColor: 'blue' })}
       </div>
 
       <div class="grid-2" style="margin-bottom:24px">
@@ -41,8 +40,8 @@ const DashboardPage = {
           <div class="grid-4" style="gap:16px">
             <div><div style="color:var(--text-muted);font-size:0.75rem">Total Empresas</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.empresas.length}</div></div>
             <div><div style="color:var(--text-muted);font-size:0.75rem">Usuarios Registrados</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.usuarios.length}</div></div>
-            <div><div style="color:var(--text-muted);font-size:0.75rem">Llamadas Hoy</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.cdrLlamadas.length}</div></div>
-            <div><div style="color:var(--text-muted);font-size:0.75rem">Agentes CC</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.agentesCC.length}</div></div>
+            <div><div style="color:var(--text-muted);font-size:0.75rem">Servidores PBX</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.pbxServers.length}</div></div>
+            <div><div style="color:var(--text-muted);font-size:0.75rem">Agentes Monitoreo</div><div style="font-size:1.2rem;font-weight:600;margin-top:2px">${DATA.agentesMonitoreo.length}</div></div>
           </div>
         </div>
       </div>

@@ -3,58 +3,54 @@ const EmpresasPage = {
   searchQuery: '',
 
   render(container) {
-    if (!Auth.hasRole('super_admin')) {
+    if (!Auth.hasRole('SUPER_ADMIN')) {
       container.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><h3>Acceso restringido</h3><p>Solo Super Admin puede gestionar empresas.</p></div>';
       return;
     }
 
-    const filtered = Utils.filterData(DATA.empresas, { nombre: this.searchQuery });
-    const sorted = Utils.sortData(filtered, 'nombre', 'asc');
-    const paged = Components.paginate(sorted, this.currentPage);
+    var filtered = Utils.filterData(DATA.empresas, { nombre: this.searchQuery });
+    var sorted = Utils.sortData(filtered, 'nombre', 'asc');
+    var paged = Components.paginate(sorted, this.currentPage);
 
-    const rows = paged.items.map(e => ({
-      _id: e.id,
-      nombre: e.nombre,
-      subdominio: e.subdominio,
-      plan: `<span class="status-badge" style="background:rgba(6,182,212,0.15);color:var(--accent-cyan)">${Utils.statusLabel(e.plan)}</span>`,
-      activo: e.activo ? '<span style="color:var(--success)"><i class="fas fa-check-circle"></i> Activa</span>' : '<span style="color:var(--text-muted)"><i class="fas fa-minus-circle"></i> Inactiva</span>',
-      usuarios: DATA.usuarios.filter(u => u.empresaId === e.id).length,
-      pbxs: DATA.pbxServers.filter(p => p.empresaId === e.id).length,
-      acciones: `
-        <button class="btn btn-ghost btn-sm edit-empresa" data-id="${e.id}"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-ghost btn-sm delete-empresa" data-id="${e.id}" style="color:var(--danger)"><i class="fas fa-trash"></i></button>
-      `
-    }));
+    var rows = paged.items.map(function(e) {
+      var usuarioCount = DATA.usuarios.filter(function(u) { return u.empresa_id === e.id; }).length;
+      var pbxCount = DATA.pbxServers.filter(function(p) { return p.empresa_id === e.id; }).length;
+      return {
+        _id: e.id,
+        nit: e.nit,
+        nombre: e.nombre,
+        correo: e.correo,
+        telefono: e.telefono || '—',
+        plan: '<span class="status-badge" style="background:rgba(6,182,212,0.15);color:var(--accent-cyan)">' + e.plan + '</span>',
+        estado: e.estado === 'Activa' ? '<span style="color:var(--success)"><i class="fas fa-check-circle"></i> Activa</span>' : '<span style="color:var(--text-muted)"><i class="fas fa-minus-circle"></i> Inactiva</span>',
+        usuarios: usuarioCount,
+        pbxs: pbxCount,
+        acciones: '<button class="btn btn-ghost btn-sm edit-empresa" data-id="' + e.id + '"><i class="fas fa-edit"></i></button> <button class="btn btn-ghost btn-sm delete-empresa" data-id="' + e.id + '" style="color:var(--danger)"><i class="fas fa-trash"></i></button>'
+      };
+    });
 
-    const html = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <div class="table-search">
-          <i class="fas fa-search"></i>
-          <input type="text" id="empresa-search" placeholder="Buscar empresa..." value="${this.searchQuery}">
-        </div>
-        <button class="btn btn-primary" id="add-empresa-btn"><i class="fas fa-plus"></i> Nueva Empresa</button>
-      </div>
-      <div class="card">
-        <div class="card-body" style="padding:0">
-          ${Components.DataTable({
-            headers: [
-              { key: 'nombre', label: 'Nombre' },
-              { key: 'subdominio', label: 'Subdominio' },
-              { key: 'plan', label: 'Plan' },
-              { key: 'activo', label: 'Estado' },
-              { key: 'usuarios', label: 'Usuarios' },
-              { key: 'pbxs', label: 'PBXs' },
-              { key: 'acciones', label: 'Acciones' }
-            ],
-            rows,
-            emptyMessage: 'No hay empresas registradas'
-          })}
-        </div>
-      </div>
-      <div id="empresa-pagination" style="display:flex;justify-content:flex-end;margin-top:12px">
-        ${Components.renderPagination(filtered.length, this.currentPage, paged.pages)}
-      </div>
-    `;
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">' +
+      '<div class="table-search"><i class="fas fa-search"></i><input type="text" id="empresa-search" placeholder="Buscar empresa..." value="' + this.searchQuery + '"></div>' +
+      '<button class="btn btn-primary" id="add-empresa-btn"><i class="fas fa-plus"></i> Nueva Empresa</button></div>' +
+      '<div class="card"><div class="card-body" style="padding:0">' +
+      Components.DataTable({
+        headers: [
+          { key: 'nit', label: 'NIT' },
+          { key: 'nombre', label: 'Nombre' },
+          { key: 'correo', label: 'Correo' },
+          { key: 'telefono', label: 'Telefono' },
+          { key: 'plan', label: 'Plan' },
+          { key: 'estado', label: 'Estado' },
+          { key: 'usuarios', label: 'Usuarios' },
+          { key: 'pbxs', label: 'PBXs' },
+          { key: 'acciones', label: 'Acciones' }
+        ],
+        rows: rows,
+        emptyMessage: 'No hay empresas registradas'
+      }) +
+      '</div></div>' +
+      '<div id="empresa-pagination" style="display:flex;justify-content:flex-end;margin-top:12px">' +
+      Components.renderPagination(filtered.length, this.currentPage, paged.pages) + '</div>';
 
     container.innerHTML = html;
     this.bindEvents();
@@ -91,14 +87,33 @@ const EmpresasPage = {
   showAddModal() {
     const body = `
       <form id="empresa-form">
-        <div class="form-group"><label class="form-label">Nombre <span style="color:var(--danger)">*</span></label><input class="form-input" id="f-nombre" placeholder="Nombre de la empresa"></div>
+        <div class="form-group">
+          <label class="form-label">NIT <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="f-nit" placeholder="900123456-7">
+          <div class="form-error"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="f-nombre" placeholder="Nombre de la empresa">
+          <div class="form-error"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="email" id="f-correo" placeholder="empresa@ejemplo.com">
+          <div class="form-error"></div>
+        </div>
         <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">Subdominio <span style="color:var(--danger)">*</span></label><input class="form-input" id="f-subdominio" placeholder="miempresa"></div>
-          <div class="form-group"><label class="form-label">Plan</label>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input class="form-input" id="f-telefono" placeholder="3001234567">
+            <div class="form-error"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plan</label>
             <select class="form-select" id="f-plan">
-              <option value="starter">Starter</option>
-              <option value="professional" selected>Professional</option>
-              <option value="enterprise">Enterprise</option>
+              <option value="Basic">Basic</option>
+              <option value="Professional" selected>Professional</option>
+              <option value="Enterprise">Enterprise</option>
             </select>
           </div>
         </div>
@@ -108,22 +123,35 @@ const EmpresasPage = {
     Components.Modal('Nueva Empresa', body, {
       confirmText: 'Crear Empresa',
       onConfirm: () => {
-        const nombre = document.getElementById('f-nombre').value.trim();
-        const subdominio = document.getElementById('f-subdominio').value.trim();
-        if (!nombre || !subdominio) { Components.Toast('warning', 'Validación', 'Nombre y subdominio son obligatorios'); return; }
-
+        const form = document.getElementById('empresa-form');
+        Validation.clearErrors(form);
+        const result = Validation.validateForm({
+          'f-nit': [['required', 'NIT'], ['unique', 'empresas', 'nit', 'NIT']],
+          'f-nombre': [['required', 'Nombre'], ['minLength', 2, 'Nombre'], ['maxLength', 100, 'Nombre']],
+          'f-correo': [['required', 'Correo'], ['email'], ['unique', 'empresas', 'correo', 'Correo']],
+          'f-telefono': [['phone']]
+        });
+        if (!result.isValid) {
+          Validation.showErrors(result.errors);
+          return;
+        }
         const newEmpresa = {
-          id: 'emp-' + String(DATA.empresas.length + 1).padStart(3, '0'),
-          nombre,
-          subdominio,
+          id: String(DATA.empresas.length + 1),
+          nit: result.values['f-nit'],
+          nombre: result.values['f-nombre'],
+          correo: result.values['f-correo'],
+          telefono: result.values['f-telefono'],
           plan: document.getElementById('f-plan').value,
-          activo: true
+          estado: 'Activa',
+          created_at: new Date().toISOString()
         };
         DATA.empresas.push(newEmpresa);
-        Components.Toast('success', 'Empresa Creada', `"${nombre}" ha sido creada`);
+        Components.Toast('success', 'Empresa Creada', newEmpresa.nombre + ' ha sido creada');
+        Components.closeModal();
         this.render(document.getElementById('page-content'));
       }
     });
+    Validation.clearOnInput(document.getElementById('empresa-form'));
   },
 
   showEditModal(id) {
@@ -132,21 +160,40 @@ const EmpresasPage = {
 
     const body = `
       <form id="empresa-edit-form">
-        <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="f-nombre" value="${empresa.nombre}"></div>
+        <div class="form-group">
+          <label class="form-label">NIT</label>
+          <input class="form-input" id="f-nit" value="${empresa.nit}" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="f-nombre" value="${empresa.nombre}">
+          <div class="form-error"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="email" id="f-correo" value="${empresa.correo}">
+          <div class="form-error"></div>
+        </div>
         <div class="grid-2" style="gap:12px">
-          <div class="form-group"><label class="form-label">Subdominio</label><input class="form-input" id="f-subdominio" value="${empresa.subdominio}"></div>
-          <div class="form-group"><label class="form-label">Plan</label>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input class="form-input" id="f-telefono" value="${empresa.telefono || ''}">
+            <div class="form-error"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Plan</label>
             <select class="form-select" id="f-plan">
-              <option value="starter" ${empresa.plan === 'starter' ? 'selected' : ''}>Starter</option>
-              <option value="professional" ${empresa.plan === 'professional' ? 'selected' : ''}>Professional</option>
-              <option value="enterprise" ${empresa.plan === 'enterprise' ? 'selected' : ''}>Enterprise</option>
+              <option value="Basic" ${empresa.plan === 'Basic' ? 'selected' : ''}>Basic</option>
+              <option value="Professional" ${empresa.plan === 'Professional' ? 'selected' : ''}>Professional</option>
+              <option value="Enterprise" ${empresa.plan === 'Enterprise' ? 'selected' : ''}>Enterprise</option>
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Estado</label>
-          <select class="form-select" id="f-activo">
-            <option value="true" ${empresa.activo ? 'selected' : ''}>Activa</option>
-            <option value="false" ${!empresa.activo ? 'selected' : ''}>Inactiva</option>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="f-estado">
+            <option value="Activa" ${empresa.estado === 'Activa' ? 'selected' : ''}>Activa</option>
+            <option value="Inactiva" ${empresa.estado === 'Inactiva' ? 'selected' : ''}>Inactiva</option>
           </select>
         </div>
       </form>
@@ -155,33 +202,52 @@ const EmpresasPage = {
     Components.Modal('Editar Empresa', body, {
       confirmText: 'Guardar Cambios',
       onConfirm: () => {
-        empresa.nombre = document.getElementById('f-nombre').value;
-        empresa.subdominio = document.getElementById('f-subdominio').value;
+        const form = document.getElementById('empresa-edit-form');
+        Validation.clearErrors(form);
+        const result = Validation.validateForm({
+          'f-nombre': [['required', 'Nombre'], ['minLength', 2, 'Nombre'], ['maxLength', 100, 'Nombre']],
+          'f-correo': [['required', 'Correo'], ['email']]
+        });
+        if (!result.isValid) {
+          Validation.showErrors(result.errors);
+          return;
+        }
+        empresa.nombre = result.values['f-nombre'];
+        empresa.correo = result.values['f-correo'];
+        empresa.telefono = result.values['f-telefono'];
         empresa.plan = document.getElementById('f-plan').value;
-        empresa.activo = document.getElementById('f-activo').value === 'true';
-        Components.Toast('success', 'Empresa Actualizada', `"${empresa.nombre}" ha sido actualizada`);
+        empresa.estado = document.getElementById('f-estado').value;
+        Components.Toast('success', 'Empresa Actualizada', empresa.nombre + ' ha sido actualizada');
+        Components.closeModal();
         this.render(document.getElementById('page-content'));
       }
     });
+    Validation.clearOnInput(document.getElementById('empresa-edit-form'));
   },
 
   showDeleteConfirm(id) {
-    const empresa = getById('empresas', id);
+    var empresa = getById('empresas', id);
     if (!empresa) return;
 
     Components.Modal('Eliminar Empresa',
-      `<p style="margin-bottom:8px">¿Estás seguro de eliminar <strong>${empresa.nombre}</strong>?</p>
-      <p style="font-size:0.8rem;color:var(--text-muted)">Se eliminarán también los usuarios, PBXs y agentes asociados. Esta acción no se puede deshacer.</p>`,
+      '<p style="margin-bottom:8px">Estas seguro de eliminar <strong>' + empresa.nombre + '</strong>?</p>' +
+      '<p style="font-size:0.8rem;color:var(--text-muted)">Se eliminaran tambien los usuarios, PBXs y agentes asociados. Esta accion no se puede deshacer.</p>',
       {
         confirmText: 'Eliminar',
-        onConfirm: () => {
-          DATA.usuarios = DATA.usuarios.filter(u => u.empresaId !== id);
-          DATA.pbxServers = DATA.pbxServers.filter(p => p.empresaId !== id);
-          DATA.agentesMonitoreo = DATA.agentesMonitoreo.filter(a => a.empresaId !== id);
-          DATA.empresas = DATA.empresas.filter(e => e.id !== id);
-          Components.Toast('success', 'Empresa Eliminada', `"${empresa.nombre}" y todos sus datos han sido eliminados`);
+        onConfirm: function() {
+          DATA.usuarios = DATA.usuarios.filter(function(u) { return u.empresa_id !== id; });
+          DATA.pbxServers = DATA.pbxServers.filter(function(p) { return p.empresa_id !== id; });
+          DATA.agentesMonitoreo = DATA.agentesMonitoreo.filter(function(a) {
+            var pbx = DATA.pbxServers.find(function(p) { return p.id === a.pbx_id; });
+            return pbx && pbx.empresa_id !== id;
+          });
+          DATA.llamadas = DATA.llamadas.filter(function(l) { return l.empresa_id !== id; });
+          DATA.alertas = DATA.alertas.filter(function(a) { return a.empresa_id !== id; });
+          DATA.empresas = DATA.empresas.filter(function(e) { return e.id !== id; });
+          Components.Toast('success', 'Empresa Eliminada', empresa.nombre + ' y todos sus datos han sido eliminados');
+          Components.closeModal();
           this.render(document.getElementById('page-content'));
-        }
+        }.bind(this)
       }
     );
   }

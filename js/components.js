@@ -57,10 +57,10 @@ const Components = {
   },
 
   QueueCard(queue) {
-    const slaPct = queue.nivelServicioPct || 0;
+    const slaPct = queue.nivel_servicio_pct || 0;
     const slaColor = Utils.slaColor(slaPct);
-    const statusLabel = Utils.statusLabel(queue.status);
-    const statusClass = queue.status === 'overflow' ? 'critical' : queue.status === 'inactive' ? 'inactive' : 'active';
+    const statusLabel = Utils.statusLabel(queue.estado);
+    const statusClass = queue.estado === 'overflow' ? 'critical' : queue.estado === 'Inactivo' ? 'inactive' : 'active';
     return `
       <div class="queue-card">
         <div class="queue-card-header">
@@ -70,18 +70,14 @@ const Components = {
           </div>
           <span class="status-badge ${statusClass}"><i class="fas fa-circle"></i> ${statusLabel}</span>
         </div>
-        <div class="queue-card-strategy"><i class="fas fa-sitemap"></i> ${Utils.statusLabel(queue.estrategia)}</div>
         <div class="queue-card-stats">
-          <div class="queue-stat"><div class="queue-stat-value">${queue.agentesDisponibles}</div><div class="queue-stat-label">Disp.</div></div>
-          <div class="queue-stat"><div class="queue-stat-value">${queue.agentesOcupados}</div><div class="queue-stat-label">Ocup.</div></div>
           <div class="queue-stat"><div class="queue-stat-value" style="color:${slaColor}">${slaPct}%</div><div class="queue-stat-label">SLA</div></div>
-          <div class="queue-stat"><div class="queue-stat-value">${queue.llamadasEsperando}</div><div class="queue-stat-label">Espera</div></div>
         </div>
         <div class="queue-sla-bar"><div class="queue-sla-fill" style="width:${slaPct}%;background:${slaColor}"></div></div>
         <div class="queue-sla-text">
-          <span>Atendidas: ${queue.llamadasAtendidasHoy}</span>
-          <span>Abandonadas: ${queue.llamadasAbandonadasHoy}</span>
-          <span>${Utils.formatDuration(queue.tiempoPromedioEsperaSeg)} espera</span>
+          <span>Atendidas: ${queue.llamadas_atendidas_hoy}</span>
+          <span>Abandonadas: ${queue.llamadas_abandonadas_hoy}</span>
+          <span>${Utils.formatDuration(queue.tiempo_promedio_espera_seg)} espera</span>
         </div>
       </div>
     `;
@@ -89,18 +85,17 @@ const Components = {
 
   AlertCard(alert) {
     const icon = Utils.iconForSeverity(alert.severidad);
-    const iconClass = alert.severidad;
+    const iconClass = alert.severidad === 'Alta' ? 'critical' : alert.severidad === 'Media' ? 'warning' : 'info';
     return `
       <div class="alert-card" data-id="${alert.id}">
         <div class="alert-icon ${iconClass}"><i class="fas fa-${icon}"></i></div>
         <div class="alert-body">
-          <div class="alert-title">${alert.titulo}</div>
-          <div class="alert-message">${alert.mensaje}</div>
-          <div class="alert-meta">${Utils.formatDate(alert.creado, { relative: true })}</div>
+          <div class="alert-title">${alert.tipo}: ${alert.mensaje}</div>
+          <div class="alert-meta">${Utils.formatDate(alert.fecha, { relative: true })}</div>
         </div>
         <div class="alert-actions">
           ${Components.StatusBadge(alert.severidad)}
-          ${alert.status === 'active' ? '<button class="btn btn-ghost btn-sm acknowledge-btn" data-id="' + alert.id + '"><i class="fas fa-check"></i> Reconocer</button>' : ''}
+          ${alert.estado === 'Nueva' ? '<button class="btn btn-ghost btn-sm acknowledge-btn" data-id="' + alert.id + '"><i class="fas fa-check"></i> Reconocer</button>' : ''}
         </div>
       </div>
     `;

@@ -18,21 +18,25 @@ const Auth = {
     this._notify();
   },
 
-  login(email, password, role) {
-    const user = DATA.usuarios.find(u => u.email === email && u.rol === role);
-    if (!user) return { success: false, error: 'Credenciales inválidas o rol incorrecto' };
+  login(correo, password, rolId) {
+    const user = DATA.usuarios.find(u => u.correo === correo && u.rol_id === rolId && u.activo);
+    if (!user) return { success: false, error: 'Credenciales invalidas o rol incorrecto' };
 
-    const hash = (role === 'supervisor' || role === 'operador') ? '#callcenter' : '#dashboard';
+    const rol = getRolName(user.rol_id);
+    const hash = (rol === 'SUPERVISOR' || rol === 'OPERADOR') ? '#callcenter' : '#dashboard';
     window.location.hash = hash;
 
     const state = {
       token: 'mock-token-' + Date.now(),
       user: {
         id: user.id,
-        email: user.email,
-        nombre: user.nombre,
-        rol: user.rol,
-        empresaId: user.empresaId
+        correo: user.correo,
+        nombres: user.nombres,
+        apellidos: user.apellidos,
+        nombre: user.nombres + ' ' + user.apellidos,
+        rol_id: user.rol_id,
+        rol: rol,
+        empresa_id: user.empresa_id
       },
       isAuthenticated: true
     };
@@ -58,6 +62,11 @@ const Auth = {
   hasRole(...roles) {
     const user = this.getUser();
     return user && roles.includes(user.rol);
+  },
+
+  hasRoleId(...roleIds) {
+    const user = this.getUser();
+    return user && roleIds.includes(user.rol_id);
   },
 
   onChange(fn) {

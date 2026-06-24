@@ -4,9 +4,9 @@ const CCAgentsPage = {
 
   render(container) {
     const user = Auth.getUser();
-    const agents = user.rol === 'super_admin'
+    const agents = user.rol === 'SUPER_ADMIN'
       ? DATA.agentesCC
-      : DATA.agentesCC.filter(a => a.empresaId === user.empresaId);
+      : DATA.agentesCC.filter(a => a.empresa_id === user.empresa_id);
 
     const filtered = Utils.filterData(agents, { nombre: this.searchQuery });
     const sorted = Utils.sortData(filtered, 'nombre', 'asc');
@@ -15,14 +15,14 @@ const CCAgentsPage = {
     const rows = paged.items.map(a => ({
       _id: a.id,
       agente: `${a.nombre} <span style="color:var(--text-muted);font-size:0.8rem">${a.extension}</span>`,
-      cola: a.colaNombre,
-      estado: Components.AgentStatusDot(a.status),
-      duracion: a.status === 'on-call' || a.status === 'ringing'
+      cola: a.cola_nombre,
+      estado: Components.AgentStatusDot(a.estado),
+      duracion: a.estado === 'on-call' || a.estado === 'ringing'
         ? `<span style="color:var(--accent-cyan);font-family:var(--font-mono)">${Utils.formatDuration(Math.floor(Math.random() * 300 + 30))}</span>`
         : '—',
-      atendidas: a.llamadasAtendidasHoy,
-      aht: Utils.formatDuration(a.tiempoPromedioManejoSeg),
-      logueado: Utils.formatDuration(a.tiempoLogueadoSeg)
+      atendidas: a.llamadas_atendidas_hoy,
+      aht: Utils.formatDuration(a.tiempo_promedio_manejo_seg),
+      logueado: Utils.formatDuration(a.tiempo_logueado_seg)
     }));
 
     const html = `
@@ -32,7 +32,7 @@ const CCAgentsPage = {
           <input type="text" id="ccagent-search" placeholder="Buscar agente..." value="${this.searchQuery}">
         </div>
         <span style="color:var(--text-muted);font-size:0.85rem">
-          <i class="fas fa-users"></i> ${agents.length} agentes · ${agents.filter(a => a.status === 'available').length} disponibles
+          <i class="fas fa-users"></i> ${agents.length} agentes · ${agents.filter(a => a.estado === 'available').length} disponibles
         </span>
       </div>
       <div class="card">
@@ -74,7 +74,7 @@ const CCAgentsPage = {
 
     document.querySelector('.page-next')?.addEventListener('click', () => {
       const user = Auth.getUser();
-      const agents = user.rol === 'super_admin' ? DATA.agentesCC : DATA.agentesCC.filter(a => a.empresaId === user.empresaId);
+      const agents = user.rol === 'SUPER_ADMIN' ? DATA.agentesCC : DATA.agentesCC.filter(a => a.empresa_id === user.empresa_id);
       const filtered = Utils.filterData(agents, { nombre: this.searchQuery });
       const p = Components.paginate(filtered, this.currentPage);
       if (this.currentPage < p.pages) { this.currentPage++; this.render(document.getElementById('page-content')); }

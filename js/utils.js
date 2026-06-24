@@ -47,8 +47,8 @@ const Utils = {
       critical: 'Crítico', failed: 'Fallida', missed: 'Perdida', offline: 'Offline', 'logged_out': 'Desconectado',
       'on-call': 'En llamada', ringing: 'Timbre', inactive: 'Inactivo', overflow: 'Overflow',
       completed: 'Completada', acknowledged: 'Reconocida', resolved: 'Resuelta',
-      info: 'Info', 'super_admin': 'Super Admin', 'admin_tenant': 'Admin Tenant',
-      supervisor: 'Supervisor', operador: 'Operador',
+      info: 'Info', 'SUPER_ADMIN': 'Super Admin', 'ADMIN_EMPRESA': 'Admin Empresa',
+      'SUPERVISOR': 'Supervisor', 'OPERADOR': 'Operador',
       answered: 'Contestada', abandoned: 'Abandonada', transferred: 'Transferida', voicemail: 'Buzón', failed: 'Fallida',
       starter: 'Starter', professional: 'Professional', enterprise: 'Enterprise',
       'ringall': 'Ring All', 'roundrobin': 'Round Robin', 'leastrecent': 'Least Recent',
@@ -60,7 +60,7 @@ const Utils = {
   },
 
   iconForSeverity(severity) {
-    const map = { info: 'info-circle', warning: 'exclamation-triangle', critical: 'bolt' };
+    const map = { info: 'info-circle', 'Info': 'info-circle', warning: 'exclamation-triangle', 'Media': 'exclamation-triangle', critical: 'bolt', 'Alta': 'bolt', 'Baja': 'info-circle' };
     return map[severity] || 'info-circle';
   },
 
@@ -103,6 +103,52 @@ const Utils = {
       return dir === 'asc'
         ? String(va).localeCompare(String(vb))
         : String(vb).localeCompare(String(va));
+    });
+  },
+
+  showFieldError(fieldId, message) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    el.classList.add('is-invalid');
+    const errorEl = el.parentElement.querySelector('.form-error');
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.add('visible');
+    }
+  },
+
+  clearFieldErrors(container) {
+    const inputs = container.querySelectorAll('.is-invalid');
+    inputs.forEach(el => {
+      el.classList.remove('is-invalid');
+      const errorEl = el.parentElement.querySelector('.form-error');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.remove('visible');
+      }
+    });
+  },
+
+  clearFieldError(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    el.classList.remove('is-invalid');
+    const errorEl = el.parentElement.querySelector('.form-error');
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.classList.remove('visible');
+    }
+  },
+
+  clearAllErrors(container) {
+    const inputs = container.querySelectorAll('.form-input, .form-select');
+    inputs.forEach(el => {
+      el.classList.remove('is-invalid');
+      const errorEl = el.parentElement.querySelector('.form-error');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.remove('visible');
+      }
     });
   }
 };

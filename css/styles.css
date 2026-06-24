@@ -353,29 +353,33 @@ a:hover { color: var(--accent-cyan-hover); }
 .status-badge i { font-size: 0.5rem; }
 
 .status-badge.healthy, .status-badge.active, .status-badge.ok, .status-badge.available,
-.status-badge.answered, .status-badge.completed {
+.status-badge.answered, .status-badge.completed, .status-badge.Activo, .status-badge.Activa,
+.status-badge.Nueva {
   background: rgba(34, 197, 94, 0.15);
   color: var(--success);
 }
 
 .status-badge.warning, .status-badge.degraded, .status-badge.break,
-.status-badge.pending, .status-badge.wrap-up, .status-badge.acknowledged {
+.status-badge.pending, .status-badge.wrap-up, .status-badge.acknowledged,
+.status-badge.Media {
   background: rgba(234, 179, 8, 0.15);
   color: var(--warning);
 }
 
 .status-badge.critical, .status-badge.failed, .status-badge.missed,
-.status-badge.offline, .status-badge.overflow {
+.status-badge.offline, .status-badge.overflow, .status-badge.Alta {
   background: rgba(239, 68, 68, 0.15);
   color: var(--danger);
 }
 
-.status-badge.inactive, .status-badge.resolved, .status-badge.logged_out {
+.status-badge.inactive, .status-badge.resolved, .status-badge.logged_out,
+.status-badge.Inactivo, .status-badge.Inactiva, .status-badge.Resuelta {
   background: rgba(100, 116, 139, 0.15);
   color: var(--text-muted);
 }
 
-.status-badge.on-call, .status-badge.info {
+.status-badge.on-call, .status-badge.info,
+.status-badge.Reconocida, .status-badge.Baja {
   background: rgba(59, 130, 246, 0.15);
   color: var(--info);
 }
@@ -590,7 +594,16 @@ a:hover { color: var(--accent-cyan-hover); }
 }
 
 .form-input::placeholder { color: var(--text-muted); }
-.form-error { color: var(--danger); font-size: 0.75rem; margin-top: 2px; }
+.form-error { color: var(--danger); font-size: 0.75rem; margin-top: 2px; display: none; }
+.form-error.visible { display: block; }
+.form-input.is-invalid, .form-select.is-invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+.form-input.is-invalid:focus, .form-select.is-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
 
 /* Modal */
 .modal-overlay {
