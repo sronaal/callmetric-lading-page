@@ -156,12 +156,6 @@ const App = {
     ];
 
     const supervisorSections = [
-      { title: 'General', items: [
-        { label: 'Dashboard', icon: 'chart-pie', href: '#dashboard' }
-      ]},
-      { title: 'Infraestructura', items: [
-        { label: 'Servidores PBX', icon: 'server', href: '#pbx' }
-      ]},
       { title: 'Call Center', items: [
         { label: 'Dashboard CC', icon: 'headset', href: '#callcenter/dashboard' },
         { label: 'Colas', icon: 'layer-group', href: '#callcenter/queues' },
