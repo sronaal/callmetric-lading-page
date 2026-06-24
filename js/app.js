@@ -155,6 +155,12 @@ const App = {
       ]},
       { title: 'Infraestructura', items: [
         { label: 'Servidores PBX', icon: 'server', href: '#pbx' }
+      ]},
+      { title: 'Call Center', items: [
+        { label: 'Dashboard CC', icon: 'headset', href: '#callcenter/dashboard' },
+        { label: 'Colas', icon: 'layer-group', href: '#callcenter/queues' },
+        { label: 'Agentes CC', icon: 'user-tie', href: '#callcenter/agents' },
+        { label: 'CDR', icon: 'phone-alt', href: '#callcenter/cdr' }
       ]}
     ];
 
@@ -206,6 +212,18 @@ const App = {
       case '#empresas':
         EmpresasPage.render(main);
         break;
+      case '#callcenter/dashboard':
+        CCDashboardPage.render(main);
+        break;
+      case '#callcenter/queues':
+        CCQueuesPage.render(main);
+        break;
+      case '#callcenter/agents':
+        CCAgentsPage.render(main);
+        break;
+      case '#callcenter/cdr':
+        CCCdrPage.render(main);
+        break;
       default:
         if (page.startsWith('#pbx/')) {
           const pbxId = parseInt(page.replace('#pbx/', ''));
@@ -228,7 +246,11 @@ const App = {
       '#pbx': 'Servidores PBX',
       '#agents': 'Agentes de Monitoreo',
       '#users': 'Gestion de Usuarios',
-      '#empresas': 'Empresas'
+      '#empresas': 'Empresas',
+      '#callcenter/dashboard': 'Dashboard Call Center',
+      '#callcenter/queues': 'Colas de Call Center',
+      '#callcenter/agents': 'Agentes de Call Center',
+      '#callcenter/cdr': 'CDR - Registro de Llamadas'
     };
     const hash = window.location.hash || '#dashboard';
     const el = document.getElementById('page-title');
