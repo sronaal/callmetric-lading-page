@@ -115,9 +115,15 @@ const App = {
         const newRol = rolNames[newRoleId] || 'SUPER_ADMIN';
         const currentUser = Auth.getUser();
         if (currentUser) {
+          const matchedUser = DATA.usuarios.find(u => u.rol_id === newRoleId);
           const state = Auth.getState();
           state.user.rol_id = newRoleId;
           state.user.rol = newRol;
+          state.user.empresa_id = matchedUser ? matchedUser.empresa_id : null;
+          state.user.nombres = matchedUser ? matchedUser.nombres : currentUser.nombres;
+          state.user.apellidos = matchedUser ? matchedUser.apellidos : currentUser.apellidos;
+          state.user.nombre = matchedUser ? matchedUser.nombres + ' ' + matchedUser.apellidos : currentUser.nombre;
+          state.user.correo = matchedUser ? matchedUser.correo : currentUser.correo;
           Auth.setState(state);
           this.currentRole = newRol;
           Components.Toast('info', 'Rol cambiado', 'Ahora eres: ' + newRol);
