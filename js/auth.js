@@ -23,7 +23,7 @@ const Auth = {
     if (!user) return { success: false, error: 'Credenciales invalidas o rol incorrecto' };
 
     const rol = getRolName(user.rol_id);
-    const hash = (rol === 'SUPERVISOR' || rol === 'OPERADOR') ? '#callcenter' : '#dashboard';
+    const hash = (rol === 'SUPERVISOR' || rol === 'OPERADOR') ? '#callcenter/dashboard' : '#dashboard';
     window.location.hash = hash;
 
     const state = {
